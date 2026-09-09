@@ -1,0 +1,10 @@
+import puppeteer from 'puppeteer';
+const browser = await puppeteer.launch({ headless: true, args: ['--autoplay-policy=no-user-gesture-required', '--use-gl=angle', '--enable-unsafe-swiftshader'] });
+const page = await browser.newPage(); await page.setViewport({ width: 1440, height: 810 });
+const errors = []; page.on('pageerror', (e) => errors.push('PAGEERROR ' + e.message + ' ' + (e.stack || '').split('\n').slice(0, 3).join(' | ')));
+page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(m.type() + ': ' + m.text().slice(0, 300)); });
+page.on('response', (r) => { if (r.status() >= 400) errors.push(`${r.status()} ${r.url()}`); });
+await page.goto('http://localhost:5188/', { waitUntil: 'networkidle2', timeout: 120000 });
+await new Promise((r) => setTimeout(r, 12000));
+const st = await page.evaluate(() => ({ loader: getComputedStyle(document.querySelector('.loader')).display, bar: document.getElementById('loader-bar').style.transform, videos: document.querySelectorAll('video').length }));
+console.log(JSON.stringify({ errors: errors.slice(0, 12), st })); await browser.close();

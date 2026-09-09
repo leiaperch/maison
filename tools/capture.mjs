@@ -1,0 +1,20 @@
+// Filme la visite complète des pièces, avec un arrêt sur le fauteuil du salon.
+import puppeteer from 'puppeteer';
+const browser = await puppeteer.launch({ headless: true, args: ['--autoplay-policy=no-user-gesture-required', '--window-size=1440,810', '--use-gl=angle', '--enable-unsafe-swiftshader'] });
+const page = await browser.newPage(); await page.setViewport({ width: 1440, height: 810 });
+await page.goto('http://localhost:5188/', { waitUntil: 'networkidle2', timeout: 180000 });
+await page.waitForFunction(() => getComputedStyle(document.querySelector('.loader')).display === 'none', { timeout: 180000 });
+await new Promise((r) => setTimeout(r, 1500));
+const rec = await page.screencast({ path: 'tools/maison_scroll.webm' });
+const H = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+const to = async (y, ms) => { await page.evaluate((y) => window.scrollTo(0, y), y); await new Promise((r) => setTimeout(r, ms)); };
+await to(0, 1200);
+for (let i = 1; i <= 90; i++) await to(3000 * i / 90, 40);
+await new Promise((r) => setTimeout(r, 600));
+await page.evaluate(() => document.querySelector('#room-index button[data-id="chair"]').click()); await new Promise((r) => setTimeout(r, 2000));
+await page.evaluate(() => { const s = document.querySelectorAll('#panel-rows .swatch'); if (s[2]) s[2].click(); }); await new Promise((r) => setTimeout(r, 900));
+await page.evaluate(() => { const s = document.querySelectorAll('#panel-rows .swatch'); if (s[5]) s[5].click(); }); await new Promise((r) => setTimeout(r, 900));
+await page.keyboard.press('Escape'); await new Promise((r) => setTimeout(r, 800));
+for (let i = 1; i <= 520; i++) await to(3000 + (H - 3000) * i / 520, 40);
+await new Promise((r) => setTimeout(r, 1200));
+await rec.stop(); await browser.close(); console.log('ok');

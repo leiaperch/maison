@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# Assets rechargeables : `python tools/fetch_assets.py` les retélécharge à
+# l'identique depuis Poly Haven (CC0). La liste MODELS du script fait office de
+# manifeste — c'est elle qui est versionnée, pas les 113 Mo de scans.
+public/models/
+public/hdri/
+
+# Captures de travail (calage, planches contact, films de contrôle).
+# Les scripts qui les produisent, eux, sont versionnés.
+tools/*.jpg
+tools/*.png
+tools/*.webm
+tools/*.trf
+tools/maison_scroll.mp4
+tools/thumbs/
