@@ -184,7 +184,7 @@ Réglages : `T`, `PUSH`, `HALL_ZOOM`, `HALL_DOOR`, `DOOR` en haut de `drive()` d
 ## Pièges rencontrés
 
 - Une vidéo Blob jamais lue ni cherchée n'a pas d'image décodée : premier saut au-dessus du seuil du scrub.
-- Chrome ne charge aucune vidéo dans un onglet jamais mis au premier plan : la page reste sur le préchargeur (vu avec le pont Claude in Chrome).
+- Chrome ne charge aucune vidéo dans un onglet jamais mis au premier plan : la page reste sur le préchargeur.
 - Diffuse de scan déjà colorée : `material.color` ne peut qu'assombrir sans `tintable()` ; contraste réduit à 55 % sinon les velours font tache.
 - `vidstabdetect` écrit un fichier binaire (TRF1) ; OpenCV `phaseCorrelate` fait le travail.
 - Un `.bin` glTF tronqué donne « Invalid typed array length » au chargement : comparer la taille au `byteLength` déclaré.
