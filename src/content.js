@@ -242,3 +242,14 @@ export const contact = {
   mail: 'bonjour@maison.example',
   address: '14 rue des Tanneurs, Lyon',
 };
+
+// Les chemins ci-dessus sont ecrits depuis la racine ; en production le site
+// peut vivre dans un sous-dossier (GitHub Pages), d'ou ce prefixe.
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
+const abs = (p) => (typeof p === 'string' && p.startsWith('/') ? BASE + p : p);
+for (const r of rooms) {
+  r.video = abs(r.video); r.poster = abs(r.poster); r.track = abs(r.track);
+  for (const it of r.items) it.model = abs(it.model);
+}
+link.video = abs(link.video); link.poster = abs(link.poster);
+export const HDRI = abs('/hdri/brown_photostudio_02_1k.hdr');

@@ -7,7 +7,7 @@ import './style.css';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
-import { site, hero, rooms, link, contact } from './content.js';
+import { site, hero, rooms, link, contact, HDRI } from './content.js';
 import { el, clear } from './dom.js';
 import { createScene } from './scene.js';
 import { createScrub } from './scrub.js';
@@ -80,7 +80,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
     createScrub({ clips: rooms.map((r) => ({ src: r.video, poster: r.poster })), links: [{ src: link.video, poster: link.poster }], onProgress: (p) => gsap.to(bar, { scaleX: p * 0.3, duration: 0.4 }) }),
     Promise.all(rooms.map((r) => fetch(r.track).then((x) => x.json()))),
   ]);
-  const scene = await createScene(byId('gl'), { rooms, videos: scrub.videos, links: scrub.linkVideos, tracks, onProgress: (p) => gsap.to(bar, { scaleX: 0.3 + p * 0.7, duration: 0.4 }) });
+  const scene = await createScene(byId('gl'), { rooms, videos: scrub.videos, links: scrub.linkVideos, tracks, hdri: HDRI, onProgress: (p) => gsap.to(bar, { scaleX: 0.3 + p * 0.7, duration: 0.4 }) });
   const HALL = rooms.length; // le couloir vient juste après les pièces dans les textures
   scrub.jump(0.002 / rooms.length + 0.003); // au-delà du seuil de saut, pour décoder une première image
 
