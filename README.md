@@ -5,7 +5,8 @@ pièce en panoramique, que le scroll traverse et que des objets réels — des s
 photogrammétriques — viennent peupler dans la vraie perspective de chaque vidéo,
 avec ombres au sol. Clic sur un objet : la caméra s'en approche, un panneau
 permet de choisir ses matières, on le déplace au sol et on le tourne à la souris.
-Entre deux pièces, un plan de couloir qui finit sur une porte.
+Entre deux pièces, un plan de couloir qui finit sur une porte. Cinq pièces :
+salon, cuisine, chambre, salle de bain, terrasse.
 
 ```
 npm install

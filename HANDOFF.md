@@ -4,7 +4,7 @@
 
 ## Ce que c'est
 
-Un gabarit de landing « marque d'objets » à revendre : une maison vide filmée pièce par pièce en panoramique (vidéo Kling), que le scroll traverse et que les objets réels (scans photogrammétriques) viennent peupler dans la vraie perspective de chaque vidéo, avec ombres au sol. Clic sur un objet : la caméra s'en approche, un panneau permet de choisir ses matières, on le déplace sur le sol et on le tourne à la souris. Quatre pièces (salon, cuisine, chambre, salle de bain), un voile avec le nom de la pièce entre deux, puis le contact.
+Un gabarit de landing « marque d'objets » à revendre : une maison vide filmée pièce par pièce en panoramique (vidéo Kling), que le scroll traverse et que les objets réels (scans photogrammétriques) viennent peupler dans la vraie perspective de chaque vidéo, avec ombres au sol. Clic sur un objet : la caméra s'en approche, un panneau permet de choisir ses matières, on le déplace sur le sol et on le tourne à la souris. Cinq pièces (salon, cuisine, chambre, salle de bain, terrasse), un plan de couloir entre chacune, puis le contact.
 
 ## Lancer
 
@@ -40,6 +40,7 @@ faisait flotter les objets dans la cuisine, la chambre et la salle de bain. Vale
 | cuisine | 76 | 1,25 | −1,5 | 4 |
 | chambre | 76 | 1,35 | −3,0 | 6 |
 | salle de bain | 76 | 1,20 | −2,5 | 2 |
+| terrasse | 62 | 0,80 | −4,5 | 0 |
 
 Convention de signe, vérifiée sur le salon : **`horizon_écran = centre + f·tan(pitch)`**, `f = 960 / tan(fov/2)`
 en coordonnées vidéo (1920 de large). Pitch positif = horizon *sous* le centre = caméra qui vise
@@ -73,6 +74,24 @@ capture une pièce précise, `node tools/sweep.mjs <room> "<pitchs>" "<hauteurs>
 
 Le « travelling » au clic est numérique (zoom + recadrage appliqués à la vidéo et à la caméra 3D via `setViewOffset`), donc l'alignement reste exact.
 
+## La terrasse
+
+Seul plan tourné dehors, et seul plan où le calage automatique (`tools/fitcam.py`) soit **bien
+conditionné** : les grandes dalles donnent deux familles de droites perpendiculaires nettes, les
+deux points de fuite tombent de part et d'autre du cadre et le roulis sort à 0,4°. Résultat
+direct : `fov 62`, `pitch −4,5`. La hauteur (0,80 m — caméra basse) vient du plan de travail du
+barbecue, à 0,90 m.
+
+Deux choses à savoir si on regénère ce plan :
+
+- **Kling y panotait dans l'autre sens** que les quatre pièces (dérive `+498` au lieu de `−356`
+  à `−857`), et ce sens-là découvrait la piscine au lieu de la dalle : les objets tardifs
+  finissaient dans l'eau. Le clip est monté à l'envers (`ffmpeg -vf reverse`) — un panoramique
+  sur pied se retourne sans que ça se voie. Vérifier le **signe de la dérive** de tout nouveau
+  clip contre les autres : c'est lui qui décide si `pos.x` croissant suit ou remonte le
+  panoramique.
+- Le champ est plus serré dehors que dedans (62° contre 76°). Ne pas recopier le calage.
+
 ## Placement des objets
 
 Le sol visible d'une pièce est borné par la position à l'écran de la plinthe du mur du fond :
@@ -88,6 +107,25 @@ cadre en premier. Dans la salle de bain, le dernier objet (`vase2`) était à `x
 coupé par le bord ; il est passé au **premier plan** (`x = 0,95`, `z = −3,35`), dans le vide entre
 le banc et le tabouret. C'est la sortie de secours quand le côté droit est plein : rapprocher
 plutôt qu'écarter.
+
+Trois autres bornes, toutes rencontrées :
+
+- **Le budget d'arrivée.** La transition mange la queue de la pièce (`T = 0.16`). Un objet dont
+  le `at` dépasse `1 − T` arrive pile quand le couloir monte en fondu : il n'a jamais son moment
+  à l'écran. Les `at` sont donc répartis entre **0,05 et 0,72** dans toutes les pièces. À
+  refaire si on touche à `T`.
+- **Les modèles à plusieurs objets.** `fitOnFloor` centre la boîte englobante du glTF entier.
+  Pour `pachira_aquatica_01` (deux arbres) l'origine ne tombe sur aucun des deux troncs et
+  l'ensemble déborde du cadre — remplacé par `potted_plant_02`. Pour
+  `outdoor_table_chair_set_01` (table + deux chaises), l'origine tombe **entre** la table et les
+  chaises : ce qu'on pose « sur la table » doit rester à moins de 0,2 m de `pos`, pas à la
+  demi-largeur du plateau, sinon ça flotte à côté.
+- **Le facteur de scroll des captures.** Une pièce vaut **10 hauteurs de fenêtre** (le pin fait
+  `1000 %` par pièce, quel qu'en soit le nombre). `tools/shot.mjs` utilisait 8,1 : toutes les
+  captures tombaient 19 % trop tôt, ce qui a fait diagnostiquer « hors cadre » des objets qu'on
+  n'avait simplement pas encore atteints, et déclenché des corrections de position inutiles.
+  Avant de déplacer un objet parce qu'on ne le voit pas, **vérifier que la légende affichée est
+  bien la sienne** — c'est le témoin le plus simple qu'on est au bon endroit du scroll.
 
 Un objet posé sur un meuble de la vidéo (`pos[1] > 0.25`) ne projette **pas** d'ombre solaire :
 le sol 3D passe sous le plan de travail filmé, l'ombre y tomberait à côté du meuble. Seule sa
@@ -133,6 +171,7 @@ Position de la porte : `DOOR = [0.48, 0.40]`, relevé sur la dernière image du 
 
 Réglages : `T`, `PUSH`, `HALL_ZOOM`, `HALL_DOOR`, `DOOR` en haut de `drive()` dans `main.js`.
 `node tools/trans.mjs <pièce> [pas] [nombre]` capture la transition image par image.
+`node tools/pick.mjs <pièce> <id>` sélectionne un objet : prouve qu'il charge et montre où il est.
 
 ## Structure
 

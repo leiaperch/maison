@@ -1,4 +1,6 @@
-// Capture d'une pièce avec ses objets : node tools/shot.mjs <room> <plusieurs pl>
+// Capture d une pièce avec ses objets. Une pièce = 10 hauteurs de fenêtre de
+// scroll (le pin fait 1000 % par pièce) : sous-estimer ce facteur fait juger les
+// derniers objets « hors cadre » alors qu on ne les a pas encore atteints. : node tools/shot.mjs <room> <plusieurs pl>
 import puppeteer from 'puppeteer';
 const room = +(process.argv[2] || 0);
 const pls = (process.argv[3] || '0.35,0.7').split(',').map(Number);
@@ -14,7 +16,7 @@ await page.evaluate((n) => document.querySelector(`#rooms-nav button[data-room="
 await new Promise((r) => setTimeout(r, 5000));
 let at = 0.01;
 for (const pl of pls) {
-  await page.evaluate((d) => scrollBy(0, d), (pl - at) * 8.1 * 810); at = pl;
+  await page.evaluate((d) => scrollBy(0, d), (pl - at) * 10 * 810); at = pl;
   await new Promise((r) => setTimeout(r, 3000));
   await page.screenshot({ path: `tools/s_${room}_${pl}.jpg`, type: 'jpeg', quality: 85 });
 }

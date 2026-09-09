@@ -19,7 +19,7 @@ await page.evaluate((n) => document.querySelector(`#rooms-nav button[data-room="
 await new Promise((r) => setTimeout(r, 5000));
 // avance dans la pièce si demandé
 if (pl > 0.02) {
-  await page.evaluate((extra) => scrollBy(0, extra), (pl - 0.01) * 8.1 * 810);
+  await page.evaluate((extra) => scrollBy(0, extra), (pl - 0.01) * 10 * 810);
   await new Promise((r) => setTimeout(r, 2500));
 }
 const on = await page.evaluate(() => document.querySelector('#rooms-nav button.on')?.textContent);

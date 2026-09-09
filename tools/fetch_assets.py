@@ -18,7 +18,9 @@ MODELS = {'modern_arm_chair_01': '2k', 'round_wooden_table_01': '1k', 'Ottoman_0
           'wooden_stool_02': '1k', 'wicker_basket_02': '1k', 'wooden_bucket_01': '1k', 'brass_candleholders': '1k', 'calathea_orbifolia_01': '1k', 'painted_wooden_bench': '1k', 'wooden_candlestick': '1k',
           'wooden_table_02': '1k', 'painted_wooden_chair_01': '1k', 'tea_set_01': '1k', 'brass_pan_01': '1k', 'side_table_tall_01': '1k',
           'folding_wooden_stool': '1k', 'planter_pot_clay': '1k', 'pachira_aquatica_01': '1k', 'ceramic_vase_04': '1k', 'wooden_bowl_02': '1k',
-          'potted_plant_04': '1k', 'coffee_table_round_01': '1k'}
+          'potted_plant_04': '1k', 'coffee_table_round_01': '1k',
+          'outdoor_table_chair_set_01': '1k', 'planter_box_02': '1k', 'potted_plant_01': '1k',
+          'brass_goblets': '1k', 'watering_can_metal_01': '1k'}
 for m, res in MODELS.items():
     files = json.load(get(f'https://api.polyhaven.com/files/{m}'))
     e = files['gltf'][res]['gltf']
