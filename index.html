@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Maison</title>
+  <meta name="description" content="Gabarit de landing : une pièce vide en vidéo que le scroll peuple d'objets réels en 3D, personnalisables au clic." />
+  <meta name="theme-color" content="#f3efe8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+  <script type="module" crossorigin src="./assets/index-Doq8m475.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-sKapMWbX.css">
+</head>
+<body>
+  <canvas id="gl"></canvas>
+  <div class="cursor" id="cursor"><span id="cursor-label"></span></div>
+
+  <div class="loader" aria-hidden="true">
+    <span class="loader-brand" id="loader-brand"></span>
+    <div class="loader-track"><i id="loader-bar"></i></div>
+  </div>
+
+  <header class="top">
+    <a class="brand" href="#top" id="brand"></a>
+    <nav class="nav" id="nav"></nav>
+    <div class="top-right">
+      <button class="mode" id="mode" type="button" disabled aria-pressed="false"><i></i><span>Nuit</span></button>
+      <a class="pill" id="cta" href="#contact" data-magnet></a>
+    </div>
+  </header>
+
+  <main>
+    <section class="room" id="piece">
+      <div class="room-stage">
+        <div class="hero" id="top">
+          <p class="kicker" id="hero-kicker"></p>
+          <h1 class="display" id="hero-title"></h1>
+          <p class="lead" id="hero-text"></p>
+          <div class="scroll-hint"><span>Défiler</span><i></i></div>
+        </div>
+        <div class="hit" id="hit"></div>
+        <div class="captions" id="captions"></div>
+        <aside class="panel" id="panel" aria-hidden="true">
+          <button class="panel-close" id="panel-close" type="button" aria-label="Fermer">×</button>
+          <p class="kicker" id="panel-kicker">Composer</p>
+          <h3 class="panel-name" id="panel-name"></h3>
+          <div class="panel-rows" id="panel-rows"></div>
+          <div class="price"><span class="price-label">Prix</span><span class="price-n" id="panel-price"></span></div>
+        </aside>
+        <div class="room-title" id="room-title"><span class="kicker" id="rt-kicker"></span><h2 class="display" id="rt-name"></h2></div>
+        <nav class="rooms-nav" id="rooms-nav"></nav>
+        <div class="room-index" id="room-index"></div>
+        <p class="hint" id="hint">Cliquer sur un objet pour le composer</p>
+    <p class="hint panel-hint" id="panel-hint">Glisser l’objet pour le déplacer · glisser à côté pour le tourner · Échap pour fermer</p>
+      </div>
+    </section>
+
+    <section class="contact" id="contact">
+      <div class="contact-in">
+        <p class="kicker" id="ct-kicker"></p>
+        <h2 class="display" id="ct-title"></h2>
+        <p class="lead" id="ct-text"></p>
+        <a class="mail" id="ct-mail" href="#" data-magnet></a>
+        <p class="address" id="ct-address"></p>
+      </div>
+      <footer class="foot" id="foot"></footer>
+    </section>
+  </main>
+
+</body>
+</html>
