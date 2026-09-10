@@ -217,6 +217,40 @@ Dans le code :
   `mix-blend-mode: screen`.
 - `tools/night_shot.mjs <pièce> [pl]` capture jour puis nuit au même point → `tools/n_<pièce>_*.jpg`.
 
+## Déclinaisons de modèles et motifs
+
+Un objet peut se décliner en plusieurs scans (ligne « Modèle » du panneau) et une matière
+teintable peut recevoir un motif (ligne « Motif » : uni, rayures, chevrons, damier, pois).
+
+- `content.js` : `variants: [{ name, model, price, tint }]` sur l'objet ; la fiche de base reste
+  l'objet lui-même. Les déclinaisons sont **cohérentes par pièce** : fauteuils et canapés au
+  salon, chaises et tabourets à la cuisine, chevets et fauteuils dans la chambre, pas de chaise de
+  cuisine au salon. `patterns: true` sur une entrée `tint` active la ligne « Motif ».
+  `on: '<id>'` sur un objet posé dessus (vase sur le guéridon, livres sur la table basse,
+  lanterne sur le chevet) : quand le meuble change, l'objet suit la hauteur du nouveau plateau
+  (`size.y` du scan, l'origine étant déjà posée au sol par `fitOnFloor`).
+- `scene.js` : seul le modèle de base est chargé au démarrage ; `prepare(id)` charge les
+  déclinaisons en arrière-plan à l'ouverture de la fiche, `setVariant(id, k)` (asynchrone)
+  échange le scan sur place : l'ancien monte et rétrécit, le nouveau arrive comme à sa première
+  apparition, l'ombre de contact se redimensionne. `setPattern(id, matière, motif)` multiplie la
+  carte de luminance (`tintable()` la garde dans `map.userData.luma`) par un canvas de motif
+  répété 3 × 3 sur la texture ; `uni` remet la luminance nue. Une matière sans texture reçoit
+  une carte grise pour que le motif ait quelque chose sur quoi se poser.
+- `main.js` : `specOf(it)` donne la fiche active (nom, prix, matières) ; les teintes et motifs
+  choisis sont mémorisés **par modèle** (`chosenBy`, `patternBy`) et réappliqués au retour.
+- 26 scans supplémentaires dans `tools/fetch_assets.py` (bloc « déclinaisons »).
+  Écartés après mesure : `WoodenChair_01` (2,27 m de haut, échelle fausse),
+  `industrial_coffee_table` (0,76 m, ce n'est pas une table basse).
+- `node tools/variants_shot.mjs <pièce> <id> [pl]` passe en revue motifs puis modèles d'un objet
+  → `tools/v_<id>_*.jpg`.
+
+Passe de placement du 10 septembre : chambre, le fauteuil recule (`2.1, −4.1`), la sellette
+`2.6, −4.2`, le calathea passe à gauche du chevet (`−1.85, −4.35`) parce que le panoramique
+de la chambre est court (−332 px) et que tout ce qui est au-delà de `x ≈ 2.6` reste au bord ;
+cuisine, la corbeille revient devant les meubles (`3.4, −3.4`) ; terrasse, la jardinière et le
+laurier quittent le muret du barbecue (qui est à `z ≈ −5`) pour la dalle (`2.5, −4.4` et
+`3.3, −4.7`), le tabouret se rapproche (`1.3, −3.9`).
+
 ## Structure
 
 - `src/content.js` — tout le contenu : marque, hero, `rooms[]` (vidéo, poster, track, caméra, soleil, objets avec `pos` en mètres, `rot`, `at` = arrivée dans la pièce, légende, `tint` = matériaux teintables et options avec supplément ; ids uniques sur toute la maison), contact. Palettes partagées `CUIR/BOIS/METAL/LIN/GRES`.

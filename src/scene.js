@@ -55,6 +55,31 @@ function tintable(tex) {
   }
   g.putImageData(d, 0, 0);
   const t = new THREE.CanvasTexture(c); t.colorSpace = tex.colorSpace; t.flipY = tex.flipY; t.wrapS = tex.wrapS; t.wrapT = tex.wrapT; t.anisotropy = tex.anisotropy;
+  t.userData.luma = c;
+  return t;
+}
+
+// Motifs posés sur une matière teintable : dessinés dans un canvas puis
+// multipliés avec la carte de luminance. `k` = densité (répétitions sur la texture).
+const PATTERNS = {
+  uni: null,
+  rayures: (g, n) => { const w = n / 16; for (let i = 0; i < 16; i += 2) { g.fillRect(i * w, 0, w, n); } },
+  chevrons: (g, n) => { const w = n / 8; g.lineWidth = w * 0.42; g.strokeStyle = g.fillStyle; for (let y = -n; y < n * 2; y += w) { g.beginPath(); for (let x = 0; x <= n; x += w) { g.lineTo(x, y + ((x / w) % 2 ? 0 : w * 0.7)); } g.stroke(); } },
+  damier: (g, n) => { const w = n / 10; for (let i = 0; i < 10; i++) for (let j = 0; j < 10; j++) if ((i + j) % 2) g.fillRect(i * w, j * w, w, w); },
+  pois: (g, n) => { const w = n / 8; for (let i = 0; i < 8; i++) for (let j = 0; j < 8; j++) { g.beginPath(); g.arc(i * w + w / 2 + (j % 2 ? w / 2 : 0), j * w + w / 2, w * 0.17, 0, Math.PI * 2); g.fill(); } },
+};
+function patterned(luma, kind, tex) {
+  const n = 1024, pc = document.createElement('canvas'); pc.width = pc.height = n;
+  const pg = pc.getContext('2d'); pg.fillStyle = '#fff'; pg.fillRect(0, 0, n, n); pg.fillStyle = 'rgba(0,0,0,.42)';
+  PATTERNS[kind](pg, n);
+  const c = document.createElement('canvas'); c.width = luma.width; c.height = luma.height;
+  const g = c.getContext('2d'); g.drawImage(luma, 0, 0);
+  g.globalCompositeOperation = 'multiply';
+  // le motif se répète plusieurs fois sur la texture, quelle que soit sa taille
+  const rep = 3, tw = c.width / rep, th = c.height / rep;
+  for (let i = 0; i < rep; i++) for (let j = 0; j < rep; j++) g.drawImage(pc, i * tw, j * th, tw, th);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = tex.colorSpace; t.flipY = tex.flipY; t.wrapS = tex.wrapS; t.wrapT = tex.wrapT; t.anisotropy = tex.anisotropy;
+  t.userData.luma = luma;
   return t;
 }
 
@@ -77,7 +102,7 @@ function fitOnFloor(obj) {
 }
 
 export async function createScene(canvas, { rooms, videos, links = [], tracks, hdri = '/hdri/brown_photostudio_02_1k.hdr', onProgress = () => {} }) {
-  // jour et nuit sont deux jeux de vidéos et de trajectoires ; `setVariant` échange le jeu actif
+  // jour et nuit sont deux jeux de vidéos et de trajectoires ; `setFootage` échange le jeu actif
   let night = false;
   const flags = new URLSearchParams(location.search);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: flags.has('capture') });
@@ -139,11 +164,12 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
   /* ---------- objets de toutes les pièces ---------- */
   const items = [];
   const all = rooms.flatMap((r, ri) => r.items.map((it) => ({ ...it, room: ri })));
-  let done = 0;
-  await Promise.all(all.map(async (it) => {
+  let done = 0, total = all.reduce((n, it) => n + 1 + (it.variants || []).length, 0);
+  // charge un scan et prépare ses matières : ombres, teinte, motifs
+  async function loadModel(spec, it) {
     let m;
-    try { m = await new Promise((res, rej) => loader.load(it.model, (g) => res(g.scene), undefined, rej)); }
-    catch (e) { console.warn('modèle illisible, ignoré :', it.model, e.message); done++; return; }
+    try { m = await new Promise((res, rej) => loader.load(spec.model, (g) => res(g.scene), undefined, rej)); }
+    catch (e) { console.warn('modèle illisible, ignoré :', spec.model, e.message); return null; }
     const size = fitOnFloor(m);
     const mats = {};
     // un objet posé sur un meuble ne doit pas projeter d'ombre solaire : le sol
@@ -151,17 +177,38 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
     // Sa petite ombre de contact, elle, reste collée sous lui.
     const onFloor = (it.pos[1] || 0) < 0.25;
     m.traverse((n) => { if (n.isMesh) { n.castShadow = onFloor; n.receiveShadow = true; n.userData.item = it; mats[n.material.name] = n.material; n.material.envMapIntensity = 1; } });
-    (it.tint || []).forEach((t) => { const mat = mats[t.material]; if (!mat) return; if (mat.map) { mat.map = tintable(mat.map); mat.needsUpdate = true; } mat.color.set(t.options[0].hex); });
+    (spec.tint || []).forEach((t) => {
+      const mat = mats[t.material]; if (!mat) return;
+      if (mat.map) { mat.map = tintable(mat.map); mat.needsUpdate = true; }
+      else if (t.patterns) { const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d'); g.fillStyle = '#ccc'; g.fillRect(0, 0, 512, 512); mat.map = new THREE.CanvasTexture(c); mat.map.colorSpace = THREE.SRGBColorSpace; mat.map.userData.luma = c; mat.needsUpdate = true; }
+      mat.color.set(t.options[0].hex);
+    });
+    return { spec, m, mats, size };
+  }
+  // seul le modèle de base est chargé au démarrage ; les déclinaisons se
+  // chargent à la demande (`prepare`), quand on ouvre la fiche d'un objet
+  total = all.length;
+  await Promise.all(all.map(async (it) => {
+    const cur = await loadModel(it, it); done++; onProgress(0.1 + 0.9 * done / total);
+    if (!cur) return;
+    const loaded = [cur, ...(it.variants || []).map((spec) => ({ spec, m: null, mats: null, size: null, pending: null }))];
     const g = new THREE.Group(); g.position.set(...it.pos); g.rotation.y = it.rot || 0;
-    const inner = new THREE.Group(); inner.add(m); g.add(inner);
-    const sh = contactShadow(Math.max(size.x, size.z) * 0.8); sh.material.opacity = 0; g.add(sh);
+    const inner = new THREE.Group(); inner.add(cur.m); g.add(inner);
+    const sh = contactShadow(Math.max(cur.size.x, cur.size.z) * 0.8); sh.material.opacity = 0; g.add(sh);
     // un objet qui s'allume la nuit porte sa propre lumière chaude, éteinte le jour
     let glow = null;
-    if (it.glow) { glow = new THREE.PointLight(it.glow.color, 0, it.glow.distance || 3, 1.4); glow.position.y = it.glow.y || size.y; g.add(glow); }
+    if (it.glow) { glow = new THREE.PointLight(it.glow.color, 0, it.glow.distance || 3, 1.4); glow.position.y = it.glow.y || cur.size.y; g.add(glow); }
     g.visible = false; scene.add(g);
-    items.push({ ...it, group: g, inner, shadow: sh, mats, size, shown: false, glowLight: glow });
-    done++; onProgress(0.1 + 0.9 * done / all.length);
+    items.push({ ...it, group: g, inner, shadow: sh, mats: cur.mats, size: cur.size, shown: false, glowLight: glow, variants: loaded, current: 0 });
   }));
+
+  // charge une déclinaison si ce n'est pas déjà fait ; null si le scan est illisible
+  async function ensureVariant(it, k) {
+    const v = it.variants[k]; if (!v) return null;
+    if (v.m) return v;
+    if (!v.pending) v.pending = loadModel(v.spec, it).then((r) => { if (r) { Object.assign(v, r); return v; } v.broken = true; return null; });
+    return v.pending;
+  }
 
   /* ---------- pièce active : calage caméra, vidéo, soleil ---------- */
   let cur = -1, cal = { ...rooms[0].camera }, fpx = 1;
@@ -239,7 +286,7 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
     camera, setRoom,
     ready() { bu.uReady.value = 1; },
     // bascule jour/nuit : autres vidéos, autres trajectoires, autre lumière
-    setVariant(v) {
+    setFootage(v) {
       night = !!v.night;
       videos = v.videos; links = v.links || []; tracks = v.tracks;
       texes.forEach((t) => t.dispose());
@@ -331,6 +378,40 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
     moveTo(id, x, z) { const it = find(id); it.group.position.x = x; it.group.position.z = z; },
     positionOf(id) { return find(id).group.position; },
     rotate(id, delta) { find(id).group.rotation.y += delta; },
+    // change de modèle sur place : l'ancien s'efface en montant, le nouveau
+    // arrive comme à sa première apparition. Renvoie la fiche du modèle choisi.
+    // charge en arrière-plan toutes les déclinaisons d'un objet
+    prepare(id) { const it = find(id); if (it) it.variants.forEach((_, k) => ensureVariant(it, k)); },
+    async setVariant(id, k) {
+      const it = find(id); if (!it || !it.variants[k]) return null;
+      if (!(await ensureVariant(it, k))) return null;
+      if (k !== it.current) {
+        const old = it.variants[it.current], nw = it.variants[k];
+        it.current = k; it.mats = nw.mats; it.size = nw.size;
+        const om = old.m;
+        gsap.to(om.scale, { x: 0.86, y: 0.86, z: 0.86, duration: 0.3, ease: 'power2.in' });
+        gsap.to(om.position, { y: om.position.y + 0.25, duration: 0.3, ease: 'power2.in', onComplete: () => { it.inner.remove(om); om.scale.setScalar(1); om.position.y -= 0.25; } });
+        const r = Math.max(nw.size.x, nw.size.z) / Math.max(old.size.x, old.size.z);
+        gsap.to(it.shadow.scale, { x: it.shadow.scale.x * r, y: it.shadow.scale.y * r, duration: 0.6, delay: 0.25 });
+        nw.m.scale.setScalar(0.9); nw.m.position.y = 0.5;
+        gsap.delayedCall(0.22, () => {
+          it.inner.add(nw.m);
+          gsap.to(nw.m.position, { y: 0, duration: 1.0, ease: 'bounce.out' });
+          gsap.to(nw.m.scale, { x: 1, y: 1, z: 1, duration: 0.8, ease: 'power3.out' });
+        });
+        // ce qui est posé sur ce meuble suit la nouvelle hauteur du plateau
+        items.filter((d) => d.on === it.id).forEach((d) => gsap.to(d.group.position, { y: nw.size.y, duration: 0.9, delay: 0.25, ease: 'power3.out' }));
+      }
+      return it.variants[k].spec;
+    },
+    // motif sur une matière teintable : 'uni' rend la carte de luminance nue
+    setPattern(id, materialName, kind) {
+      const it = find(id); const m = it && it.mats[materialName]; if (!m || !m.map || !m.map.userData.luma) return;
+      const luma = m.map.userData.luma, old = m.map;
+      if (!PATTERNS[kind]) { m.map = new THREE.CanvasTexture(luma); m.map.colorSpace = old.colorSpace; m.map.flipY = old.flipY; m.map.wrapS = old.wrapS; m.map.wrapT = old.wrapT; m.map.anisotropy = old.anisotropy; m.map.userData.luma = luma; }
+      else m.map = patterned(luma, kind, old);
+      old.dispose(); m.needsUpdate = true;
+    },
     setTint(id, materialName, hex) {
       const it = find(id); const m = it && it.mats[materialName]; if (!m) return;
       gsap.to(m.color, { ...new THREE.Color(hex), duration: 0.6, ease: 'power2.out' });

@@ -101,6 +101,10 @@ body.night .pill{color:#14120f}
 .swatch.on{border-color:var(--ink)}
 .swatch:hover{transform:scale(1.12)}
 .swatch-name{font-size:13px;color:var(--ink2)}
+.opt{background:none;border:1px solid var(--line);color:var(--ink2);font:inherit;font-size:12px;padding:6px 11px;border-radius:999px;transition:color .25s,border-color .25s,background .25s}
+.opt:hover{color:var(--ink);border-color:var(--ink)}
+.opt.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.opt.busy{opacity:.5}
 .price{margin-top:22px;display:flex;align-items:baseline;gap:14px;border-top:1px solid var(--line);padding-top:16px}
 .price-label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
 .price-n{font-family:var(--serif);font-size:30px;font-weight:300;font-variant-numeric:tabular-nums}

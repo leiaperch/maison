@@ -20,7 +20,12 @@ MODELS = {'modern_arm_chair_01': '2k', 'round_wooden_table_01': '1k', 'Ottoman_0
           'folding_wooden_stool': '1k', 'planter_pot_clay': '1k', 'pachira_aquatica_01': '1k', 'ceramic_vase_04': '1k', 'wooden_bowl_02': '1k',
           'potted_plant_04': '1k', 'coffee_table_round_01': '1k',
           'outdoor_table_chair_set_01': '1k', 'planter_box_02': '1k', 'potted_plant_01': '1k',
-          'brass_goblets': '1k', 'watering_can_metal_01': '1k'}
+          'brass_goblets': '1k', 'watering_can_metal_01': '1k',
+          # déclinaisons de modèles (panneau « Modèle »)
+          'sofa_03': '1k', 'Sofa_01': '1k', 'ArmChair_01': '1k', 'GreenChair_01': '1k', 'Rockingchair_01': '1k', 'CoffeeTable_01': '1k', 'industrial_coffee_table': '1k',
+          'ceramic_vase_01': '1k', 'ceramic_vase_03': '1k', 'brass_vase_02': '1k', 'brass_vase_03': '1k', 'antique_ceramic_vase_01': '1k', 'anthurium_botany_01': '1k',
+          'WoodenChair_01': '1k', 'SchoolChair_01': '1k', 'metal_stool_01': '1k', 'metal_stool_02': '1k', 'painted_wooden_stool': '1k', 'ClassicNightstand_01': '1k',
+          'ceramic_pot': '1k', 'pot_enamel_01': '1k', 'planter_box_01': '1k', 'planter_box_03': '1k', 'small_wooden_table_01': '1k', 'painted_wooden_sofa': '1k', 'painted_wooden_chair_02': '1k'}
 for m, res in MODELS.items():
     files = json.load(get(f'https://api.polyhaven.com/files/{m}'))
     e = files['gltf'][res]['gltf']

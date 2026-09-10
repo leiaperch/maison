@@ -191,22 +191,40 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
   const drag = { on: false, mode: null, x0: 0, y0: 0, moved: false, off: null };
   hit.addEventListener('pointermove', (e) => { if (drag.on && drag.moved) return; const it = scene.hover(e.clientX, e.clientY); cur.setLabel(it ? (selected && selected.id === it.id ? 'Déplacer' : 'Composer') : (selected ? 'Tourner' : '')); });
   hit.addEventListener('pointerleave', () => cur.setLabel(''));
-  function select(it) {
+  // un objet peut se décliner en plusieurs modèles : la fiche active est celle
+  // du modèle choisi (nom, prix, matières), le choix est mémorisé par modèle
+  const specOf = (it) => (it.variant ? it.variants[it.variant - 1] : it);
+  const PATTERN_NAMES = [['uni', 'Uni'], ['rayures', 'Rayures'], ['chevrons', 'Chevrons'], ['damier', 'Damier'], ['pois', 'Pois']];
+  function select(it, refocus = true) {
     selected = it;
-    byId('panel-name').textContent = it.name;
+    const sp = specOf(it);
+    byId('panel-name').textContent = sp.name;
     const rows = byId('panel-rows'); clear(rows);
-    it.chosen = it.chosen || it.tint.map(() => 0);
-    it.tint.forEach((t, r) => {
+    if (it.variants && it.variants.length) {
+      const row = el('div', { class: 'swatch-row' }, el('span', { class: 'lab', text: 'Modèle' }));
+      [it, ...it.variants].forEach((v, k) => row.append(el('button', { class: `opt${(it.variant || 0) === k ? ' on' : ''}`, type: 'button', text: v.name, dataset: { variant: k } })));
+      rows.append(row);
+    }
+    it.chosenBy = it.chosenBy || {}; it.patternBy = it.patternBy || {};
+    const key = it.variant || 0;
+    it.chosen = it.chosenBy[key] = it.chosenBy[key] || sp.tint.map(() => 0);
+    it.pattern = it.patternBy[key] = it.patternBy[key] || sp.tint.map(() => 'uni');
+    sp.tint.forEach((t, r) => {
       const row = el('div', { class: 'swatch-row' }, el('span', { class: 'lab', text: t.label }));
       t.options.forEach((o, i) => row.append(el('button', { class: `swatch${it.chosen[r] === i ? ' on' : ''}`, type: 'button', 'aria-label': o.name, dataset: { row: r, i } }, el('i', { style: `--sw:${o.hex}` }))));
       row.append(el('span', { class: 'swatch-name', text: t.options[it.chosen[r]].name }));
       rows.append(row);
+      if (t.patterns) {
+        const prow = el('div', { class: 'swatch-row' }, el('span', { class: 'lab', text: 'Motif' }));
+        PATTERN_NAMES.forEach(([kind, label]) => prow.append(el('button', { class: `opt${it.pattern[r] === kind ? ' on' : ''}`, type: 'button', text: label, dataset: { row: r, pattern: kind } })));
+        rows.append(prow);
+      }
     });
-    if (!it.tint.length) rows.append(el('p', { class: 'panel-note', text: 'Pas d’option, il est parfait comme ça.' }));
+    if (!sp.tint.length && !(it.variants && it.variants.length)) rows.append(el('p', { class: 'panel-note', text: 'Pas d’option, il est parfait comme ça.' }));
     updatePrice();
     panel.setAttribute('aria-hidden', 'false');
-    gsap.fromTo(panel, { autoAlpha: 0, x: 24 }, { autoAlpha: 1, x: 0, duration: 0.6, ease: 'power3.out', overwrite: true });
-    scene.focusDolly(it.id);
+    if (refocus) gsap.fromTo(panel, { autoAlpha: 0, x: 24 }, { autoAlpha: 1, x: 0, duration: 0.6, ease: 'power3.out', overwrite: true });
+    if (refocus) { scene.focusDolly(it.id); scene.prepare(it.id); }
     byId('room-index').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.id === it.id));
     gsap.to('#room-index, #hint, #rooms-nav', { autoAlpha: 0, duration: 0.3 }); gsap.to('#panel-hint', { autoAlpha: 1, duration: 0.5, delay: 0.3 });
     showCaption(null);
@@ -214,8 +232,9 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
   }
   function updatePrice() {
     const it = selected; if (!it) return;
-    const total = it.price + it.tint.reduce((s, t, r) => s + (t.options[it.chosen[r]].price || 0), 0);
-    byId('panel-price').textContent = it.price ? euro(total) : 'Offert';
+    const sp = specOf(it);
+    const total = sp.price + sp.tint.reduce((s, t, r) => s + (t.options[it.chosen[r]].price || 0), 0);
+    byId('panel-price').textContent = sp.price ? euro(total) : 'Offert';
   }
   function deselect() {
     if (!selected) return;
@@ -262,8 +281,31 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
     else select(it);
   });
   byId('panel-rows').addEventListener('click', (e) => {
-    const b = e.target.closest('.swatch'); if (!b || !selected) return;
-    const r = +b.dataset.row, i = +b.dataset.i, t = selected.tint[r];
+    if (!selected) return;
+    const o = e.target.closest('.opt');
+    if (o && o.dataset.variant !== undefined) {
+      const k = +o.dataset.variant, it = selected;
+      if (k === (it.variant || 0)) return;
+      o.classList.add('busy');
+      scene.setVariant(it.id, k).then((sp) => {
+        o.classList.remove('busy');
+        if (!sp || selected !== it) return;
+        it.variant = k;
+        select(it, false);
+        // le modèle arrive avec ses matières et ses motifs déjà choisis
+        specOf(it).tint.forEach((t, r) => { scene.setTint(it.id, t.material, t.options[it.chosen[r]].hex); if (t.patterns) scene.setPattern(it.id, t.material, it.pattern[r]); });
+      });
+      return;
+    }
+    if (o && o.dataset.pattern) {
+      const r = +o.dataset.row, t = specOf(selected).tint[r];
+      selected.pattern[r] = o.dataset.pattern;
+      o.parentElement.querySelectorAll('.opt').forEach((x) => x.classList.toggle('on', x === o));
+      scene.setPattern(selected.id, t.material, o.dataset.pattern);
+      return;
+    }
+    const b = e.target.closest('.swatch'); if (!b) return;
+    const r = +b.dataset.row, i = +b.dataset.i, t = specOf(selected).tint[r];
     selected.chosen[r] = i;
     b.parentElement.querySelectorAll('.swatch').forEach((x) => x.classList.toggle('on', x === b));
     b.parentElement.querySelector('.swatch-name').textContent = t.options[i].name;
@@ -299,7 +341,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
       const set = on ? nightSet : day;
       scrub = set.scrub; tracks = set.tracks;
       scrub.jump(progress);
-      scene.setVariant({ videos: scrub.videos, links: scrub.linkVideos, tracks, night: on });
+      scene.setFootage({ videos: scrub.videos, links: scrub.linkVideos, tracks, night: on });
       roomIdx = -1; drive(progress);
       scene.setDim(0, 0.9);
     });
