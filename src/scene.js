@@ -77,6 +77,8 @@ function fitOnFloor(obj) {
 }
 
 export async function createScene(canvas, { rooms, videos, links = [], tracks, hdri = '/hdri/brown_photostudio_02_1k.hdr', onProgress = () => {} }) {
+  // jour et nuit sont deux jeux de vidéos et de trajectoires ; `setVariant` échange le jeu actif
+  let night = false;
   const flags = new URLSearchParams(location.search);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance', preserveDrawingBuffer: flags.has('capture') });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
@@ -92,7 +94,7 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
   /* ---------- fond vidéo ---------- */
   const vtex = (v) => { const t = new THREE.VideoTexture(v); t.colorSpace = THREE.SRGBColorSpace; t.minFilter = t.magFilter = THREE.LinearFilter; t.generateMipmaps = false; return t; };
   // les pièces d'abord, les plans de liaison ensuite : `setBlend` indexe l'ensemble
-  const texes = [...videos.map(vtex), ...links.map(vtex)];
+  let texes = [...videos.map(vtex), ...links.map(vtex)];
   const dolly = { zoom: 1, panX: 0, panY: 0 };
   const dollyB = { zoom: 1, panX: 0, panY: 0 };
   const bgScene = new THREE.Scene(), bgCam = new THREE.Camera();
@@ -114,7 +116,10 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
   const sun = new THREE.DirectionalLight(0xffffff, 2); sun.castShadow = true;
   sun.target.position.set(0.5, 0, -7); scene.add(sun.target);
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.camera.left = sun.shadow.camera.bottom = -6; sun.shadow.camera.right = sun.shadow.camera.top = 6; sun.shadow.camera.far = 24; sun.shadow.bias = -0.0004; sun.shadow.radius = 3;
-  scene.add(sun, new THREE.HemisphereLight(0xfff2e2, 0xa8907a, 0.35));
+  const hemi = new THREE.HemisphereLight(0xfff2e2, 0xa8907a, 0.35);
+  scene.add(sun, hemi);
+  // la nuit : les lampes de la pièce (points chauds posés là où la vidéo montre une lampe)
+  const roomLights = new THREE.Group(); scene.add(roomLights);
   // Mire de calage (?calib) : l'horizon (une ligne à la hauteur exacte de la
   // caméra, donc toujours plate), un mètre au sol, et des cubes d'un mètre. Le
   // calage est bon quand les cubes ont l'air posés et que leur mètre s'accorde
@@ -150,8 +155,11 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
     const g = new THREE.Group(); g.position.set(...it.pos); g.rotation.y = it.rot || 0;
     const inner = new THREE.Group(); inner.add(m); g.add(inner);
     const sh = contactShadow(Math.max(size.x, size.z) * 0.8); sh.material.opacity = 0; g.add(sh);
+    // un objet qui s'allume la nuit porte sa propre lumière chaude, éteinte le jour
+    let glow = null;
+    if (it.glow) { glow = new THREE.PointLight(it.glow.color, 0, it.glow.distance || 3, 1.4); glow.position.y = it.glow.y || size.y; g.add(glow); }
     g.visible = false; scene.add(g);
-    items.push({ ...it, group: g, inner, shadow: sh, mats, size, shown: false });
+    items.push({ ...it, group: g, inner, shadow: sh, mats, size, shown: false, glowLight: glow });
     done++; onProgress(0.1 + 0.9 * done / all.length);
   }));
 
@@ -166,11 +174,25 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
     camera.position.set(0, cal.height, 0);
     fpx = (1920 / 2) / Math.tan(THREE.MathUtils.degToRad(cal.fov) / 2);
     bu.uVideo.value = texes[i];
-    const s = rooms[i].sun; sun.position.set(...s.pos); sun.color.set(s.color); sun.intensity = s.intensity;
+    applyLighting();
     items.forEach((it) => { if (it.room !== i) { it.shown = false; it.group.visible = false; it.shadow.material.opacity = 0; } });
     applyDolly();
   }
 
+  // éclairage de la pièce courante, selon le moment : soleil et ciel le jour,
+  // clair de lune bleu et lampes chaudes la nuit
+  function applyLighting() {
+    const r = rooms[cur];
+    const s = night && r.night ? r.night.sun : r.sun;
+    sun.position.set(...s.pos); sun.color.set(s.color); sun.intensity = s.intensity;
+    hemi.color.set(night ? 0x55628a : 0xfff2e2); hemi.groundColor.set(night ? 0x2a1f18 : 0xa8907a); hemi.intensity = night ? 0.08 : 0.35;
+    scene.environmentIntensity = night ? 0.06 : 0.55;
+    renderer.toneMappingExposure = night ? 0.9 : 1.0;
+    floor.material.opacity = night ? 0.22 : 0.32;
+    roomLights.clear();
+    if (night && r.night) r.night.lights.forEach((l) => { const pl = new THREE.PointLight(l.color, l.intensity * 1.6, l.distance, 1.4); pl.position.set(...l.pos); roomLights.add(pl); });
+    items.forEach((it) => { if (it.glowLight) it.glowLight.intensity = night ? it.glow.intensity * 1.8 : 0; });
+  }
   let snap = false, dip = 0;
   const dimBase = { v: 0 };
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -203,6 +225,7 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
   // la caméra 3D suit le panoramique mesuré sur la vidéo de la pièce (rotation pure)
   function followTrack() {
     const track = tracks[cur], video = videos[cur];
+    if (!video) return;
     let dx = 0, dy = 0;
     if (track && track.track.length) {
       const f = Math.min(Math.max(video.currentTime * track.fps, 0), track.track.length - 1), i = Math.floor(f), t = f - i, j = Math.min(i + 1, track.track.length - 1);
@@ -215,6 +238,15 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
   return {
     camera, setRoom,
     ready() { bu.uReady.value = 1; },
+    // bascule jour/nuit : autres vidéos, autres trajectoires, autre lumière
+    setVariant(v) {
+      night = !!v.night;
+      videos = v.videos; links = v.links || []; tracks = v.tracks;
+      texes.forEach((t) => t.dispose());
+      texes = [...videos.map(vtex), ...links.map(vtex)];
+      bu.uVideo.value = texes[cur]; bu.uVideoB.value = texes[cur];
+      applyLighting();
+    },
     tick() {
       const k = snap ? 1 : 0.06;
       dolly.zoom += (target.zoom - dolly.zoom) * k; dolly.panX += (target.panX - dolly.panX) * k; dolly.panY += (target.panY - dolly.panY) * k;
@@ -239,7 +271,7 @@ export async function createScene(canvas, { rooms, videos, links = [], tracks, h
       if (idx >= 0 && texes[idx]) bu.uVideoB.value = texes[idx];
       dollyB.zoom = zoom; dollyB.panX = panX; dollyB.panY = panY;
     },
-    setDim(v) { gsap.to(dimBase, { v, duration: 0.8 }); },
+    setDim(v, duration = 0.8) { gsap.to(dimBase, { v, duration, overwrite: true }); },
     // fait arriver ou repartir un objet
     show(id, on) {
       const it = find(id); if (!it || it.shown === on) return;

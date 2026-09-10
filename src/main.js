@@ -76,11 +76,12 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
 (async () => {
   const bar = byId('loader-bar');
   // les pièces s'enchaînent dans une seule chaîne de scrub ; chaque vidéo a sa trajectoire mesurée
-  const [scrub, tracks] = await Promise.all([
+  let [scrub, tracks] = await Promise.all([
     createScrub({ clips: rooms.map((r) => ({ src: r.video, poster: r.poster })), links: [{ src: link.video, poster: link.poster }], onProgress: (p) => gsap.to(bar, { scaleX: p * 0.3, duration: 0.4 }) }),
     Promise.all(rooms.map((r) => fetch(r.track).then((x) => x.json()))),
   ]);
   const scene = await createScene(byId('gl'), { rooms, videos: scrub.videos, links: scrub.linkVideos, tracks, hdri: HDRI, onProgress: (p) => gsap.to(bar, { scaleX: 0.3 + p * 0.7, duration: 0.4 }) });
+  const day = { scrub, tracks };
   const HALL = rooms.length; // le couloir vient juste après les pièces dans les textures
   scrub.jump(0.002 / rooms.length + 0.003); // au-delà du seuil de saut, pour décoder une première image
 
@@ -270,6 +271,41 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
     updatePrice();
   });
 
+  /* ---------- la nuit ----------
+     Mêmes pièces, même caméra, autres vidéos : chaque plan a été refilmé lampes
+     allumées. Le jeu de nuit se charge en arrière-plan une fois la page prête ;
+     la bascule passe par le noir, le temps d'échanger vidéos, trajectoires et
+     lumières, puis reprend exactement au même point du parcours. */
+  const modeBtn = byId('mode');
+  let isNight = false, nightSet = null;
+  async function loadNight() {
+    const [ns, nt] = await Promise.all([
+      createScrub({ clips: rooms.map((r) => ({ src: r.night.video, poster: r.night.poster })), links: [{ src: link.night.video, poster: link.night.poster }] }),
+      Promise.all(rooms.map((r) => fetch(r.night.track).then((x) => x.json()).catch(() => null))),
+    ]);
+    if (ns.videos.length !== rooms.length || !ns.linkVideos.length) { console.warn('jeu de nuit incomplet, bascule désactivée'); return; }
+    ns.jump(0.002 / rooms.length + 0.003);
+    nightSet = { scrub: ns, tracks: nt };
+    modeBtn.disabled = false;
+  }
+  function setNight(on) {
+    if (on === isNight || (on && !nightSet)) return;
+    isNight = on;
+    modeBtn.setAttribute('aria-pressed', String(on)); modeBtn.querySelector('span').textContent = on ? 'Jour' : 'Nuit';
+    deselect();
+    scene.setDim(1, 0.35);
+    gsap.delayedCall(0.4, () => {
+      document.body.classList.toggle('night', on);
+      const set = on ? nightSet : day;
+      scrub = set.scrub; tracks = set.tracks;
+      scrub.jump(progress);
+      scene.setVariant({ videos: scrub.videos, links: scrub.linkVideos, tracks, night: on });
+      roomIdx = -1; drive(progress);
+      scene.setDim(0, 0.9);
+    });
+  }
+  modeBtn.addEventListener('click', () => setNight(!isNight));
+
   reveals();
   ScrollTrigger.refresh();
   drive(0);
@@ -281,5 +317,6 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
     .from('.top', { y: -14, opacity: 0, duration: 0.9, ease: 'power3.out' }, '-=0.5')
     .from('#hero-kicker', { opacity: 0, y: 10, duration: 0.8 }, '-=0.6')
     .from('#hero-title .ln i', { yPercent: 105, duration: 1.3, ease: 'expo.out', stagger: 0.1 }, '-=0.7')
-    .from('#hero-text, .scroll-hint, #hint, #rooms-nav', { opacity: 0, duration: 0.8 }, '-=0.5');
+    .from('#hero-text, .scroll-hint, #hint, #rooms-nav', { opacity: 0, duration: 0.8 }, '-=0.5')
+    .call(loadNight);
 })();

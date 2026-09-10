@@ -40,6 +40,7 @@ const PEINTURE = (extra = 40) => [{ name: 'Blanc cassé', hex: '#e8e2d6' }, { na
 export const rooms = [
   {
     id: 'salon', name: 'Le salon', video: '/video/room.mp4', poster: '/images/room.jpg', track: '/video/room-track.json',
+    night: { video: '/video/room-night.mp4', poster: '/images/room-night.jpg', track: '/video/room-night-track.json', sun: { pos: [-5, 3.4, -4.5], color: '#7d8fc4', intensity: 0.35 }, lights: [{ pos: [3.3, 1.45, -6.6], color: '#ffc98a', intensity: 9, distance: 7 }, { pos: [0.4, 2.7, -6.2], color: '#ffd9ae', intensity: 5, distance: 8 }] },
     camera: { fov: 76, height: 1.4, pitch: 2.2, yaw: 16, roll: 0 },
     sun: { pos: [-5, 3.4, -4.5], color: '#ffe3c2', intensity: 2.4 },
     items: [
@@ -70,7 +71,7 @@ export const rooms = [
       { id: 'books', at: 0.45, model: '/models/book_encyclopedia_set_01/book_encyclopedia_set_01_1k.gltf', name: 'Encyclopédie', price: 0, pos: [2.1, 0.39, -6.15], rot: 0.3,
         caption: ['De quoi', 'lire'], text: 'Douze volumes, reliés main, en dépôt chez nous.', tint: [] },
       // desk_lamp_arm_01 — 0,20 × 0,89 × 0,61, posée au sol derrière la table basse
-      { id: 'lamp', at: 0.5, model: '/models/desk_lamp_arm_01/desk_lamp_arm_01_1k.gltf', name: 'Lampe Bras', price: 390, pos: [2.4, 0, -7.4], rot: -2.2,
+      { id: 'lamp', at: 0.5, model: '/models/desk_lamp_arm_01/desk_lamp_arm_01_1k.gltf', name: 'Lampe Bras', price: 390, pos: [2.4, 0, -7.4], rot: -2.2, glow: { y: 0.86, color: '#ffc98a', intensity: 4, distance: 4 },
         caption: ['La lumière', 'du soir'], text: 'Bras articulé, laiton ou acier laqué.', tint: [{ material: 'desk_lamp_arm_01', label: 'Métal', options: METAL(0) }] },
       // brass_vase_01 — 0,23 × 0,69, sur la table basse Lisse (plateau à 0,39)
       { id: 'brass', at: 0.64, model: '/models/brass_vase_01/brass_vase_01_1k.gltf', name: 'Vase Laiton', price: 210, pos: [2.45, 0.39, -6.5], rot: 0,
@@ -84,6 +85,7 @@ export const rooms = [
   },
   {
     id: 'cuisine', name: 'La cuisine', video: '/video/kitchen.mp4', poster: '/images/kitchen.jpg', track: '/video/kitchen-track.json',
+    night: { video: '/video/kitchen-night.mp4', poster: '/images/kitchen-night.jpg', track: '/video/kitchen-night-track.json', sun: { pos: [-6, 3.2, -3.5], color: '#7d8fc4', intensity: 0.3 }, lights: [{ pos: [1.5, 1.05, -5.3], color: '#ffc27a', intensity: 8, distance: 6 }, { pos: [4.2, 1.05, -5.6], color: '#ffc27a', intensity: 6, distance: 5 }, { pos: [0, 2.7, -4], color: '#ffe0bd', intensity: 4, distance: 8 }] },
     camera: { fov: 76, height: 1.25, pitch: -1.5, yaw: 4, roll: 0 },
     sun: { pos: [-6, 3.2, -3.5], color: '#ffe9cd', intensity: 2.6 },
     items: [
@@ -126,6 +128,7 @@ export const rooms = [
   },
   {
     id: 'chambre', name: 'La chambre', video: '/video/bedroom.mp4', poster: '/images/bedroom.jpg', track: '/video/bedroom-track.json',
+    night: { video: '/video/bedroom-night.mp4', poster: '/images/bedroom-night.jpg', track: '/video/bedroom-night-track.json', sun: { pos: [-5.5, 3.2, -3.5], color: '#7d8fc4', intensity: 0.35 }, lights: [{ pos: [-2.3, 1.4, -3.3], color: '#ffc98a', intensity: 8, distance: 6 }, { pos: [0.3, 2.6, -3.8], color: '#ffe0bd', intensity: 5, distance: 8 }] },
     camera: { fov: 76, height: 1.35, pitch: -3, yaw: 6, roll: 0 },
     sun: { pos: [-5.5, 3.2, -3.5], color: '#ffeed8', intensity: 2.2 },
     items: [
@@ -139,7 +142,7 @@ export const rooms = [
       { id: 'night1', at: 0.22, model: '/models/painted_wooden_nightstand/painted_wooden_nightstand_1k.gltf', name: 'Chevet Aube', price: 480, pos: [-1.5, 0, -3.6], rot: 0.2,
         caption: ['Un chevet', 'de chaque côté'], text: 'Un tiroir, une niche, peinture à l’huile.', tint: [{ material: 'painted_wooden_nightstand', label: 'Peinture', options: PEINTURE() }] },
       // Lantern_01 — 0,12 × 0,29, sur le chevet (0,66)
-      { id: 'lantern', at: 0.28, model: '/models/Lantern_01/Lantern_01_1k.gltf', name: 'Lanterne', price: 160, pos: [-1.57, 0.66, -3.65], rot: 0.4,
+      { id: 'lantern', at: 0.28, model: '/models/Lantern_01/Lantern_01_1k.gltf', name: 'Lanterne', price: 160, pos: [-1.57, 0.66, -3.65], rot: 0.4, glow: { y: 0.18, color: '#ffb866', intensity: 2.5, distance: 3 },
         caption: ['Une lumière', 'douce'], text: 'Laiton et verre soufflé.', tint: [{ material: 'Lantern_01_brass', label: 'Métal', options: METAL(0) }] },
       // alarm_clock_01 — 0,10 × 0,13, sur le chevet
       { id: 'clock', at: 0.35, model: '/models/alarm_clock_01/alarm_clock_01_1k.gltf', name: 'Réveil', price: 60, pos: [-1.35, 0.66, -3.47], rot: 0.9,
@@ -160,6 +163,7 @@ export const rooms = [
   },
   {
     id: 'sdb', name: 'La salle de bain', video: '/video/bath.mp4', poster: '/images/bath.jpg', track: '/video/bath-track.json',
+    night: { video: '/video/bath-night.mp4', poster: '/images/bath-night.jpg', track: '/video/bath-night-track.json', sun: { pos: [-4.5, 3, -3], color: '#7d8fc4', intensity: 0.3 }, lights: [{ pos: [0.2, 2.5, -3.2], color: '#ffd9ae', intensity: 6, distance: 7 }, { pos: [-0.9, 1.8, -3.9], color: '#ffc98a', intensity: 4, distance: 5 }] },
     camera: { fov: 76, height: 1.2, pitch: -2.5, yaw: 2, roll: 0 },
     sun: { pos: [-4.5, 3, -3], color: '#ffeede', intensity: 2 },
     items: [
@@ -176,7 +180,7 @@ export const rooms = [
       { id: 'bowl2', at: 0.33, model: '/models/wooden_bowl_02/wooden_bowl_02_1k.gltf', name: 'Coupelle Frêne', price: 35, pos: [1.6, 0.44, -3.2], rot: 0,
         caption: ['Et une coupelle', 'pour le savon'], text: 'Frêne huilé, tourné dans la masse.', tint: [{ material: 'wooden_bowl_02', label: 'Bois', options: BOIS(0) }] },
       // brass_candleholders — 0,41 × 0,84 × 0,36 : au sol, ce sont de grands bougeoirs
-      { id: 'candles', at: 0.42, model: '/models/brass_candleholders/brass_candleholders_1k.gltf', name: 'Bougeoirs', price: 140, pos: [2.4, 0, -3.6], rot: 0.3,
+      { id: 'candles', at: 0.42, model: '/models/brass_candleholders/brass_candleholders_1k.gltf', name: 'Bougeoirs', price: 140, pos: [2.4, 0, -3.6], rot: 0.3, glow: { y: 0.8, color: '#ffb266', intensity: 3, distance: 3.5 },
         caption: ['Et des', 'bougies'], text: 'Laiton, trois hauteurs, la plus grande fait 84 cm.', tint: [] },
       // planter_pot_clay — 0,27 × 0,22
       { id: 'clay', at: 0.53, model: '/models/planter_pot_clay/planter_pot_clay_1k.gltf', name: 'Pot de terre', price: 40, pos: [3.0, 0, -3.35], rot: 0,
@@ -198,6 +202,7 @@ export const rooms = [
     // plus serré que dedans (62° au lieu de 76°) : c'est le calage automatique sur
     // les dalles qui le dit, et c'est le seul plan où il soit bien conditionné.
     id: 'terrasse', name: 'La terrasse', video: '/video/pool.mp4', poster: '/images/pool.jpg', track: '/video/pool-track.json',
+    night: { video: '/video/pool-night.mp4', poster: '/images/pool-night.jpg', track: '/video/pool-night-track.json', sun: { pos: [7, 3.5, -9], color: '#6f83bd', intensity: 0.45 }, lights: [{ pos: [-1.6, 0.5, -6.2], color: '#ffb866', intensity: 5, distance: 5 }, { pos: [2.6, 0.5, -6.6], color: '#ffb866', intensity: 5, distance: 5 }, { pos: [-3.5, 0.1, -5.5], color: '#5fd6e0', intensity: 6, distance: 7 }] },
     camera: { fov: 62, height: 0.8, pitch: -4.5, yaw: 0, roll: 0 },
     sun: { pos: [7, 3.5, -9], color: '#ffdfb8', intensity: 2.4 },
     items: [
@@ -233,7 +238,7 @@ export const rooms = [
 // Le plan de liaison joué entre deux pièces : un travelling avant de couloir qui
 // finit sur une porte fermée. Le même pour les trois transitions — c'est la même
 // maison. `DOOR` dans main.js dit où est la porte dans la dernière image.
-export const link = { video: '/video/hall.mp4', poster: '/images/hall.jpg' };
+export const link = { video: '/video/hall.mp4', poster: '/images/hall.jpg', night: { video: '/video/hall-night.mp4', poster: '/images/hall-night.jpg' } };
 
 export const contact = {
   kicker: 'Rendez-vous',
@@ -249,7 +254,9 @@ const BASE = import.meta.env.BASE_URL.replace(/\/$/, '');
 const abs = (p) => (typeof p === 'string' && p.startsWith('/') ? BASE + p : p);
 for (const r of rooms) {
   r.video = abs(r.video); r.poster = abs(r.poster); r.track = abs(r.track);
+  r.night.video = abs(r.night.video); r.night.poster = abs(r.night.poster); r.night.track = abs(r.night.track);
   for (const it of r.items) it.model = abs(it.model);
 }
 link.video = abs(link.video); link.poster = abs(link.poster);
+link.night.video = abs(link.night.video); link.night.poster = abs(link.night.poster);
 export const HDRI = abs('/hdri/brown_photostudio_02_1k.hdr');

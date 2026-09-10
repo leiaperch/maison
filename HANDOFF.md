@@ -173,6 +173,50 @@ Réglages : `T`, `PUSH`, `HALL_ZOOM`, `HALL_DOOR`, `DOOR` en haut de `drive()` d
 `node tools/trans.mjs <pièce> [pas] [nombre]` capture la transition image par image.
 `node tools/pick.mjs <pièce> <id>` sélectionne un objet : prouve qu'il charge et montre où il est.
 
+## La nuit
+
+Un interrupteur « Nuit / Jour » dans l'en-tête. Mêmes pièces, même calage caméra, mêmes objets :
+chaque plan a été refilmé lampes allumées, et la scène 3D passe en éclairage de nuit.
+
+La chaîne (tout dans `tools/night/` et `tools/raw/*-night.mp4`) :
+
+1. Première image de chaque clip servi (`ffmpeg -frames:v 1`), y compris le couloir.
+2. **Relighting** de cette image en image-à-image (Nano Banana Pro, 160 crédits, 16:9 2K) avec un
+   prompt qui ne décrit que le changement : nuit bleue dehors, lampes chaudes dedans, « keep
+   everything else strictly identical ». La géométrie est conservée au pixel près, donc le calage
+   `camera` de la pièce reste valable tel quel.
+3. **Image-à-vidéo** Kling v3 Pro (500 crédits / 5 s, `resolution pro, duration 5,
+   generate_audio "false", aspect_ratio 16:9`) depuis cette image : « locked-off tripod, slow
+   steady pan to the right, pure rotation, nothing moves ». Le couloir : « slow dolly forward
+   toward the closed door ».
+4. `track_pan.py` sur chaque clip → `public/video/<clip>-night-track.json`, encodage `-g 8 -bf 0`
+   et 720p `-g 4`, poster `public/images/<clip>-night.jpg`.
+
+Dérives mesurées (px sur 1920, jour → nuit) : salon −356 → −240, cuisine −857 → −409, chambre
+−332 → −479, salle de bain −310 → −291, terrasse −498 → −730. L'amplitude diffère d'un tournage
+à l'autre : c'est la trajectoire mesurée qui pilote la caméra, pas une valeur commune, donc les
+objets restent posés au bon endroit. Ils arrivent simplement un peu plus tôt ou plus tard dans le
+cadre.
+
+**Piège** : le premier essai de salle de bain panotait dans le mauvais sens et à peine (+90 px).
+Vérifier le signe et l'amplitude de la dérive de chaque clip avant de l'encoder ; regénérer avec
+un prompt qui nomme ce que le pan doit découvrir (« reveals more of the tiled wall on the
+right ») a suffi. Un clip qui panote à l'envers se retourne aussi avec `-vf reverse`.
+
+Dans le code :
+
+- `content.js` : `night` par pièce (`video`, `poster`, `track`, `sun` = clair de lune bleu faible,
+  `lights` = points chauds posés là où la vidéo montre une lampe), `link.night`, et `glow` sur les
+  objets qui s'allument (lampe bras, lanterne, bougeoirs).
+- `scene.js` : `setVariant({ videos, links, tracks, night })` échange les textures et les
+  trajectoires ; `applyLighting()` règle soleil, hémisphère, environnement, exposition et lampes.
+- `main.js` : le jeu de nuit se charge en arrière-plan après le préchargeur (`loadNight`), le
+  bouton n'est activé que si les six clips sont là ; `setNight` passe par le noir (`setDim(1)`),
+  échange la chaîne de scrub et reprend au même point du parcours.
+- `style.css` : `body.night` inverse la palette (papier sombre, encre claire), l'en-tête passe en
+  `mix-blend-mode: screen`.
+- `tools/night_shot.mjs <pièce> [pl]` capture jour puis nuit au même point → `tools/n_<pièce>_*.jpg`.
+
 ## Structure
 
 - `src/content.js` — tout le contenu : marque, hero, `rooms[]` (vidéo, poster, track, caméra, soleil, objets avec `pos` en mètres, `rot`, `at` = arrivée dans la pièce, légende, `tint` = matériaux teintables et options avec supplément ; ids uniques sur toute la maison), contact. Palettes partagées `CUIR/BOIS/METAL/LIN/GRES`.

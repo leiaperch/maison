@@ -35,6 +35,15 @@ section{position:relative}
 @media (hover:none){.cursor{display:none}body,a,button{cursor:auto}}
 
 /* préchargeur */
+/* la nuit : la même page, en négatif, sur les vidéos sombres */
+body.night{--paper:#14120f;--paper2:#1d1a16;--ink:#f3efe8;--ink2:rgba(243,239,232,.78);--dim:rgba(243,239,232,.55);--line:rgba(243,239,232,.16)}
+body.night .top{mix-blend-mode:screen}
+body.night .pill{color:#14120f}
+.mode{background:none;border:1px solid var(--line);color:var(--ink2);font:inherit;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:9px 14px;border-radius:999px;display:flex;align-items:center;gap:8px;transition:color .3s,border-color .3s,opacity .3s}
+.mode i{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.7}
+.mode:hover{color:var(--ink);border-color:var(--ink)}
+.mode[disabled]{opacity:.35}
+.top-right{display:flex;align-items:center;gap:14px}
 .loader{position:fixed;inset:0;z-index:100;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
 .loader-brand{font-family:var(--serif);font-size:30px;letter-spacing:.26em;text-transform:uppercase;font-weight:300}
 .loader-track{width:140px;height:1px;background:var(--line);overflow:hidden}
@@ -61,7 +70,7 @@ section{position:relative}
 .room{height:100vh}
 .room-stage{position:relative;height:100vh;height:100svh}
 .hero{position:absolute;left:var(--pad);bottom:12vh;max-width:820px;z-index:3;pointer-events:none}
-.hero .display{text-shadow:0 2px 30px rgba(243,239,232,.6)}
+.hero .display{text-shadow:0 2px 30px color-mix(in srgb,var(--paper) 60%,transparent)}
 .scroll-hint{position:absolute;right:var(--pad);bottom:34px;z-index:3;display:flex;flex-direction:column;align-items:center;gap:10px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);pointer-events:none}
 .scroll-hint i{width:1px;height:48px;background:linear-gradient(var(--ink),transparent)}
 .hit{position:absolute;inset:0;z-index:2}
@@ -78,7 +87,7 @@ section{position:relative}
 .caption p{margin-top:10px;font-size:14px;line-height:1.5;color:var(--ink2);max-width:34ch}
 
 /* panneau de composition */
-.panel{position:absolute;right:var(--pad);top:50%;transform:translateY(-50%);z-index:4;width:min(360px,calc(100% - 2*var(--pad)));background:rgba(243,239,232,.92);backdrop-filter:blur(10px);padding:28px 28px 24px;border-radius:6px;box-shadow:0 20px 60px rgba(23,21,15,.14);opacity:0;visibility:hidden}
+.panel{position:absolute;right:var(--pad);top:50%;transform:translateY(-50%);z-index:4;width:min(360px,calc(100% - 2*var(--pad)));background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(10px);padding:28px 28px 24px;border-radius:6px;box-shadow:0 20px 60px rgba(23,21,15,.14);opacity:0;visibility:hidden}
 .panel .kicker{margin-bottom:8px}
 .panel-name{font-family:var(--serif);font-weight:300;font-size:32px;line-height:1.05;letter-spacing:-.01em}
 .panel-close{position:absolute;right:16px;top:12px;background:none;border:0;font:300 28px/1 var(--serif);color:var(--ink2)}
@@ -98,7 +107,7 @@ section{position:relative}
 
 /* nom de la pièce pendant la plongée : posé sur l'image, jamais sur un carton */
 .room-title{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;opacity:0;visibility:hidden;pointer-events:none;
-  text-shadow:0 2px 40px var(--paper),0 1px 8px rgba(243,239,232,.9)}
+  text-shadow:0 2px 40px var(--paper),0 1px 8px color-mix(in srgb,var(--paper) 90%,transparent)}
 .room-title .kicker{margin-bottom:0}
 .room-title .display{font-size:clamp(40px,6vw,96px)}
 /* pièces */
