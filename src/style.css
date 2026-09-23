@@ -122,6 +122,7 @@ body.night .pill{color:#14120f}
 @media (max-width:760px){.rooms-nav{display:none}}
 /* index des objets */
 .room-index{position:absolute;left:var(--pad);bottom:64px;max-height:34vh;overflow:hidden;z-index:3;display:flex;flex-direction:column;align-items:flex-start;gap:5px;font-size:12px}
+.hero-on .room-index,.hero-on .hint{visibility:hidden!important}
 .room-index button{background:none;border:0;font:inherit;color:var(--dim);letter-spacing:.06em;transition:color .2s;padding:2px 0}
 .room-index button:hover,.room-index button.on{color:var(--ink)}
 

@@ -88,6 +88,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
   /* le scroll traverse les pièces et les peuple */
   let progress = 0, selected = null, lastShown = null, roomIdx = -1;
   const heroEl = byId('top'); let heroOn = true;
+  document.body.classList.add('hero-on'); // la liste des objets partage le coin bas gauche avec l'accueil
   const caps = Object.fromEntries(allItems.map((it) => [it.id, byId(`cap-${it.id}`)]));
   Object.values(caps).forEach((c) => { gsap.set(c, { autoAlpha: 0 }); gsap.set(c.querySelectorAll('.ln i'), { yPercent: 105 }); });
   let capOn = null;
@@ -124,7 +125,7 @@ document.querySelectorAll('a[href^="#"]').forEach((a) => a.addEventListener('cli
   function drive(p) {
     progress = p;
     const h = p < 0.012;
-    if (h !== heroOn) { heroOn = h; gsap.to(heroEl, { autoAlpha: h ? 1 : 0, y: h ? 0 : -30, duration: h ? 0.9 : 0.6, ease: h ? 'expo.out' : 'power2.in', overwrite: true }); }
+    if (h !== heroOn) { heroOn = h; document.body.classList.toggle('hero-on', h); gsap.to(heroEl, { autoAlpha: h ? 1 : 0, y: h ? 0 : -30, duration: h ? 0.9 : 0.6, ease: h ? 'expo.out' : 'power2.in', overwrite: true }); }
     const { i, pl } = locate(p);
     if (i !== roomIdx) { roomIdx = i; scene.setRoom(i); renderIndex(i); deselect(); byId('rooms-nav').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.room === i)); }
     const room = rooms[i];
