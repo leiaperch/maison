@@ -145,6 +145,13 @@ body.night .pill{color:#14120f}
 .mail{display:inline-block;font-family:var(--serif);font-size:clamp(26px,3.4vw,46px);font-weight:300;color:var(--ink);text-decoration:none;border-bottom:1px solid var(--ink);padding-bottom:6px;margin-top:34px;align-self:flex-start}
 .address{margin-top:18px;font-size:13px;color:var(--ink2)}
 .foot{margin-top:auto;padding-top:90px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+/* à propos de la démo */
+.about{padding:14vh var(--pad);background:var(--paper);border-top:1px solid var(--line)}
+.about-in{max-width:68ch}
+.about-title{font-family:var(--serif);font-weight:300;font-size:clamp(32px,4vw,56px);line-height:1;letter-spacing:-.02em}
+.about-text{color:var(--ink2);font-size:clamp(16px,1.2vw,18px);line-height:1.7;margin-top:26px}
+.about-stack{margin-top:22px;font-size:13px;color:var(--dim)}
+.about-stack a{color:inherit}
 
 @media (max-width:760px){
   .hero{max-width:none;right:var(--pad)}
